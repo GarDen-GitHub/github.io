@@ -419,22 +419,27 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能 (スペース区切りのAND検索を緩やかに)
+    // 検索機能 (スペース区切りのAND検索、半角/全角スペース対応、記号無視)
     function searchTable() {
       document.getElementById('search-loading').style.display = 'block'; // 検索中表示
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      let query = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      // 半角/全角スペースを統一
+      query = query.replace(/\s+/g, ' '); // すべてのスペース（半角/全角）を半角スペースに
       if (query === '') {
         currentData = [...allData];
       } else {
-        const keywords = query.split(' ').filter(k => k.length > 0); // スペースで分割し、空のキーワードを除外
+        // 記号を削除
+        const cleanQuery = query.replace(/[-,.!?;:"'()]/g, '');
+        const keywords = cleanQuery.split(' ').filter(k => k.length > 0); // スペースで分割し、空のキーワードを除外
         currentData = allData.filter(row => {
-          const name = String(row['Hall_Name'] || '').toLowerCase();
-          const address = String(row['Hall_Address'] || '').toLowerCase();
+          const name = String(row['Hall_Name'] || '').toLowerCase().replace(/[-,.!?;:"'()]/g, '');
+          const address = String(row['Hall_Address'] || '').toLowerCase().replace(/[-,.!?;:"'()]/g, '');
           // すべてのキーワードが店舗名または住所に含まれる（分散マッチ可）
           return keywords.every(keyword => name.includes(keyword) || address.includes(keyword));
         });
       }
-      console.log('Search Query:', query, 'Results:', currentData.length); // デバッグログ
+      console.log('Search Query:', query, 'Cleaned Query:', query.replace(/[-,.!?;:"'()]/g, ''), 'Results:', currentData.length); // デバッグログ
       renderTable(currentData);
       document.getElementById('search-loading').style.display = 'none'; // 検索中非表示
     }
