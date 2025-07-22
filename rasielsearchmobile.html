@@ -158,7 +158,7 @@
         overflow-x: auto;
         overflow-y: auto;
         min-width: 2770px;
-        margin-top: 160px; /* ヘッダーと更新日時の高さ分 */
+        margin-top: 180px; /* ヘッダーと更新日時の高さ分 */
       }
       #header-container {
         flex-direction: column;
@@ -181,13 +181,13 @@
       }
       #update-time {
         position: fixed;
-        top: 120px; /* ヘッダーの下に十分なスペース */
+        top: 140px; /* ヘッダーと検索窓の下に十分なスペース */
         left: 0;
         width: 100%;
       }
       #search-loading {
         position: fixed;
-        top: 150px; /* 更新日時の下 */
+        top: 170px; /* 更新日時の下 */
         left: 0;
         width: 100%;
       }
@@ -419,7 +419,7 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能 (スペース区切りのAND検索を厳密化)
+    // 検索機能 (スペース区切りのAND検索を緩やかに)
     function searchTable() {
       document.getElementById('search-loading').style.display = 'block'; // 検索中表示
       const query = document.getElementById('search-input').value.toLowerCase().trim();
@@ -430,10 +430,8 @@
         currentData = allData.filter(row => {
           const name = String(row['Hall_Name'] || '').toLowerCase();
           const address = String(row['Hall_Address'] || '').toLowerCase();
-          // 店舗名に少なくとも1つのキーワードが含まれ、残りのキーワードが住所に含まれることを優先
-          let nameMatch = keywords.some(keyword => name.includes(keyword));
-          let addressMatch = keywords.every(keyword => address.includes(keyword));
-          return nameMatch && addressMatch; // 店舗名と住所の両方にマッチする行を返す
+          // すべてのキーワードが店舗名または住所に含まれる（分散マッチ可）
+          return keywords.every(keyword => name.includes(keyword) || address.includes(keyword));
         });
       }
       console.log('Search Query:', query, 'Results:', currentData.length); // デバッグログ
