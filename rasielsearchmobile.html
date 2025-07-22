@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- ズーム防止追加 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- ズーム防止 -->
   <title>Rasiel Search Mobile - Data</title>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 20px; }
     #data-container { display: none; }
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
-    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
     th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } /* デフォルトの中央寄せ */
     th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
@@ -19,8 +19,9 @@
     button.copy-btn:hover { background-color: #0056b3; }
     @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } #table-container { max-height: 70vh; } #update-time { top: 80px; } }
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
+    #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
     
-    /* 列幅調整 */
+    /* 列幅調整 (固定) */
     th:nth-child(1), td:nth-child(1) { width: 5%; } /* コピー列 */
     th:nth-child(2), td:nth-child(2) { width: 20%; } /* 店舗名 */
     th:nth-child(3), td:nth-child(3) { width: 30%; } /* 住所 */
@@ -31,7 +32,7 @@
     /* 検索機能のスタイル */
     #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
     #search-container { display: flex; align-items: center; }
-    #search-input { padding: 8px; margin-right: 5px; width: 200px; font-size: 16px; } /* ズーム防止のためfont-size 16px */
+    #search-input { padding: 8px; margin-right: 5px; width: 200px; font-size: 16px; } /* ズーム防止 */
     #search-button { padding: 8px 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     #search-button:hover { background-color: #218838; }
 
@@ -39,7 +40,7 @@
     @media (max-width: 600px) {
       #header-container { flex-direction: column; align-items: center; }
       #search-container { margin-top: 10px; justify-content: center; width: 100%; }
-      #search-input { width: 70%; font-size: 16px; } /* ズーム防止 */
+      #search-input { width: 70%; font-size: 16px; }
     }
   </style>
 </head>
@@ -48,11 +49,12 @@
     <div id="header-container">
       <h2>Rasiel Search Mobile</h2>
       <div id="search-container">
-        <input type="text" id="search-input" placeholder="店舗名 or 住所で検索" oninput="searchTable()">
+        <input type="text" id="search-input" placeholder="店舗名 or 住所で検索">
         <button id="search-button" onclick="searchTable()">検索</button>
       </div>
     </div>
     <p id="update-time"></p> <!-- 更新日時表示 -->
+    <div id="search-loading">検索中...</div> <!-- 検索中表示 -->
     <div id="table-container">
       <table id="data-table">
         <thead id="table-head"></thead>
@@ -215,7 +217,7 @@
         const customColumns = [
           { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
           { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
-            const prefName = (address || '').match(/^[^\d]+?[都道府県府]/)?.[0] || '';
+            const prefName = (address || '').match(/^([^\d]+?[都道府県府])/)?.[1] || '';
             const prefRoman = prefMap[prefName] || '';
             return prefRoman ? `https://p-town.dmm.com/shops/${prefRoman}/${value}` : '';
           } },
@@ -263,8 +265,9 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能 (エラー防ぐ変換追加 + デバッグログ)
+    // 検索機能 (ボタンクリックのみ + 検索中表示 + デバッグログ)
     function searchTable() {
+      document.getElementById('search-loading').style.display = 'block'; // 検索中表示
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       if (query === '') {
         currentData = [...allData];
@@ -277,6 +280,7 @@
       }
       console.log('Search Query:', query, 'Results:', currentData.length); // デバッグログ
       renderTable(currentData);
+      document.getElementById('search-loading').style.display = 'none'; // 検索中非表示
     }
 
     // コピー機能 (エラー防ぐ変換追加 + デバッグログ)
@@ -287,7 +291,7 @@
         alert('行データの取得に失敗しました。');
         return;
       }
-    
+
       const appUrlMap = {
         'PsCUBE_URL': (v) => v,
         'Site777_ID': (v) => `https://m.site777.jp/f/D0100.do?pmc=${v}`,
@@ -302,13 +306,13 @@
         'PAPIMO_ID': (v) => /^\d{8}$/.test(String(v)) ? `https://papimo.jp/h/${v}/` : null // String変換追加
       };
       const noLinkKeys = ['Maruhan_ID', 'PIA_ID', 'PachiPICKS_ID', 'JugglerOnline_ID', 'P-ken_ID', 'Star_ID', 'LINE_ID'];
-    
+
       const dataSiteKeys = [
         'Maruhan_ID', 'PIA_ID', 'PsCUBE_URL', 'Site777_ID', 'PachiPICKS_ID', 'JugglerOnline_ID',
         'DAIDATA_Online_ID', 'TERASmobile2_URL', 'PAPIMO_ID', 'P-moba_URL', 'P-do_ID', 'P-ken_ID',
         'P-tora_ID', 'Star_ID', 'Reito_ID', 'PrimeAI_ID', 'P-ASSiST_URL', 'LINE_ID'
       ];
-    
+
       let text = `⚫︎ ${row['Hall_Name'] || '不明'}`;
       dataSiteKeys.forEach(appKey => {
         let value = row[appKey] || '';
@@ -335,7 +339,7 @@
           }
         }
       });
-    
+
       navigator.clipboard.writeText(text).then(() => {
         console.log('Copy success for row:', rowIndex); // デバッグ
         alert('クリップボードに情報をコピーしました');
