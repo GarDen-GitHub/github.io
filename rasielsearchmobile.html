@@ -19,7 +19,7 @@
       color: gray;
       margin-bottom: 10px;
       position: fixed;
-      top: 60px;
+      top: 70px; /* ヘッダーのマージン分調整 */
       left: 0;
       width: 100%;
       background: white;
@@ -31,7 +31,7 @@
       overflow-y: auto;
       overflow-x: auto;
       min-width: 2770px;
-      margin-top: 100px; /* ヘッダーと更新日時の高さ分 */
+      margin-top: 110px; /* ヘッダーと更新日時の高さ分 */
     }
     table {
       width: 100%;
@@ -94,7 +94,7 @@
       color: gray;
       margin-top: 10px;
       position: fixed;
-      top: 90px;
+      top: 100px; /* ヘッダーと更新日時の下 */
       left: 0;
       width: 100%;
       z-index: 15;
@@ -120,6 +120,7 @@
       z-index: 20;
       padding: 10px 20px;
       box-sizing: border-box;
+      margin-top: 10px; /* 上部にスペースを確保 */
     }
     #search-container {
       display: flex;
@@ -155,8 +156,9 @@
       #table-container {
         max-height: 70vh;
         overflow-x: auto;
+        overflow-y: auto;
         min-width: 2770px;
-        margin-top: 120px;
+        margin-top: 130px; /* ヘッダーと更新日時の高さ分 */
       }
       #header-container {
         flex-direction: column;
@@ -166,6 +168,7 @@
         left: 0;
         width: 100%;
         padding: 10px;
+        margin-top: 10px; /* 上部にスペースを確保 */
       }
       #search-container {
         margin-top: 10px;
@@ -178,13 +181,13 @@
       }
       #update-time {
         position: fixed;
-        top: 80px;
+        top: 90px; /* ヘッダーの下に調整 */
         left: 0;
         width: 100%;
       }
       #search-loading {
         position: fixed;
-        top: 110px;
+        top: 120px; /* 更新日時の下 */
         left: 0;
         width: 100%;
       }
