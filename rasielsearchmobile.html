@@ -9,27 +9,22 @@
     #data-container { display: none; }
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
-    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; scroll-behavior: smooth; } /* 列幅固定 + スムーズスクロール */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* デフォルトの中央寄せ + 折り返しなし + 1行表示 */
-    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; white-space: pre-line; } /* ヘッダー固定 + 改行許可 */
+    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; } /* デフォルトの中央寄せ + 折り返し */
+    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
     th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
     .gray-row td { color: gray; } /* グレー行のスタイル */
     button.copy-btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button.copy-btn:hover { background-color: #0056b3; }
-    @media (max-width: 600px) {
-      body { padding: 10px; }
-      table { font-size: 12px; }
-      #table-container { max-height: 70vh; }
-      #update-time { top: 80px; }
-    }
+    @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } #table-container { max-height: 70vh; } #update-time { top: 80px; } }
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
     #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
     
-    /* 列幅調整 (px単位で固定, 合計を考慮) */
+    /* 列幅調整 (px単位で固定) */
     th:nth-child(1), td:nth-child(1) { width: 50px; } /* コピー列 */
-    th:nth-child(2), td:nth-child(2) { width: 150px; } /* 店舗名 (調整) */
-    th:nth-child(3), td:nth-child(3) { width: 250px; } /* 住所 (調整) */
+    th:nth-child(2), td:nth-child(2) { width: 200px; } /* 店舗名 */
+    th:nth-child(3), td:nth-child(3) { width: 300px; } /* 住所 */
     th:nth-child(4), td:nth-child(4) { width: 50px; } /* P台数 */
     th:nth-child(5), td:nth-child(5) { width: 50px; } /* S台数 */
     th:nth-child(n+6), td:nth-child(n+6) { width: 40px; } /* 残り列 (均等固定) */
@@ -46,8 +41,6 @@
       #header-container { flex-direction: column; align-items: center; }
       #search-container { margin-top: 10px; justify-content: center; width: 100%; }
       #search-input { width: 70%; font-size: 16px; }
-      th:nth-child(2), td:nth-child(2) { width: 120px; } /* モバイル調整 */
-      th:nth-child(3), td:nth-child(3) { width: 200px; } /* モバイル調整 */
     }
   </style>
 </head>
@@ -88,12 +81,8 @@
     function fetchData() {
       const apiUrl = 'https://script.google.com/macros/s/AKfycbx-8PrH2Sm7zvCyjPFnst4qRE1BkulkQOvpPupBxxRn_vhtNFsznG2rrLMFhZWxUH8VbA/exec';
       
-      const loadingElement = document.getElementById('loading');
-      if (loadingElement) {
-        loadingElement.style.display = 'block';
-      } else {
-        console.warn('Loading element not found');
-      }
+      // ローディング表示
+      document.getElementById('loading').style.display = 'block';
       
       fetch(apiUrl)
         .then(response => {
@@ -153,16 +142,12 @@
           }
           
           // ローディング非表示
-          if (loadingElement) {
-            loadingElement.style.display = 'none';
-          }
+          document.getElementById('loading').style.display = 'none';
         })
         .catch(error => {
           console.error('Fetch error:', error.message);
           document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
-          if (loadingElement) {
-            loadingElement.style.display = 'none';
-          }
+          document.getElementById('loading').style.display = 'none';
         });
     }
 
@@ -202,7 +187,7 @@
         if (hasDataSite) {
           bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${allData.indexOf(row)})">📋</button></td>`;
         } else {
-          bodyRows += '<td></td'.length;
+          bodyRows += '<td></td>';
         }
         
         // 基本列
@@ -222,7 +207,7 @@
           '富山県': 'toyama', '石川県': 'ishikawa', '福井県': 'fukui', '山梨県': 'yamanashi', '長野県': 'nagano',
           '岐阜県': 'gifu', '静岡県': 'shizuoka', '愛知県': 'aichi', '三重県': 'mie', '滋賀県': 'shiga',
           '京都府': 'kyoto', '大阪府': 'osaka', '兵庫県': 'hyogo', '奈良県': 'nara', '和歌山県': 'wakayama',
-          '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayma', '広島県': 'hiroshima', '山口県': 'yamaguchi',
+          '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayama', '広島県': 'hiroshima', '山口県': 'yamaguchi',
           '徳島県': 'tokushima', '香川県': 'kagawa', '愛媛県': 'ehime', '高知県': 'kochi', '福岡県': 'fukuoka',
           '佐賀県': 'saga', '長崎県': 'nagasaki', '熊本県': 'kumamoto', '大分県': 'oita', '宮崎県': 'miyazaki',
           '鹿児島県': 'kagoshima', '沖縄県': 'okinawa'
@@ -242,10 +227,10 @@
           { key: 'PIA_ID', name: 'PIA', link: null },
           { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
           { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
-          { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
-          { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
-          { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => String(value).includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
-          { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
+          { key: 'PachiPICKS_ID', name: 'Pachi\nPICKS', link: null },
+          { key: 'JugglerOnline_ID', name: 'Juggler\nOnline', link: null },
+          { key: 'DAIDATA_Online_ID', name: 'DAIDATA\nOnline', link: value => String(value).includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
+          { key: 'TERASmobile2_URL', name: 'TERAS\nmobile2', link: value => value },
           { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => String(value).length === 8 ? `https://papimo.jp/h/${value}/` : null },
           { key: 'P-moba_URL', name: 'P-moba', link: value => value },
           { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
@@ -265,12 +250,17 @@
             bodyRows += `<td>×</td>`;
           } else {
             value = String(value); // 非文字列を変換
-            const parts = value.split('|').filter(p => p.trim());
-            let display = parts.map(p => {
-              let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
-              return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
-            }).join(' ');
-            bodyRows += `<td>${display}</td>`;
+            if (typeof value !== 'string') {
+              console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
+              bodyRows += `<td>×</td>`;
+            } else {
+              const parts = value.split('|').filter(p => p.trim());
+              let display = parts.map(p => {
+                let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
+                return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
+              }).join(' ');
+              bodyRows += `<td>${display}</td>`;
+            }
           }
         });
         
