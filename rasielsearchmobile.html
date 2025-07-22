@@ -38,7 +38,7 @@
 
     // データ取得と表示
     function fetchData() {
-      const apiUrl = 'https://script.google.com/macros/s/AKfycbx-8PrH2Sm7zvCyjPFnst4qRE1BkulkQOvpPupBxxRn_vhtNFsznG2rrLMFhZWxUH8VbA/exec';  // 新しいURL
+      const apiUrl = 'https://script.google.com/macros/s/AKfycbx-8PrH2Sm7zvCyjPFnst4qRE1BkulkQOvpPupBxxRn_vhtNFsznG2rrLMFhZWxUH8VbA/exec';
       
       // ローディング表示
       document.getElementById('loading').style.display = 'block';
@@ -111,7 +111,7 @@
                   if (!row.hasOwnProperty(key)) {
                     console.warn(`Missing key ${key} in row ${index}`);
                   }
-                  bodyRows += `<td>${row[key] || ''}</td>`;
+                  bodyRows += `<td>${row[key] != null ? row[key] : ''}</td>`;
                 });
                 
                 // 都道府県ローマ字マッピング (DMM用)
@@ -158,11 +158,14 @@
                 ];
                 
                 customColumns.forEach(col => {
-                  if (!row.hasOwnProperty(col.key) || !row[col.key]) {
+                  const value = row[col.key];
+                  if (value === undefined || value === null || value === '') {
                     console.warn(`Missing or empty key ${col.key} in row ${index}`);
                     bodyRows += `<td>×</td>`;
+                  } else if (typeof value !== 'string') {
+                    console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
+                    bodyRows += `<td>×</td>`;
                   } else {
-                    const value = row[col.key];
                     const parts = value.split('|').filter(p => p.trim());
                     let display = parts.map(p => {
                       let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
