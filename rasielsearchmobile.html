@@ -175,7 +175,7 @@
               date = new Date(updateTime.replace(/\//g, '-')); // JST文字列をDateに
             } else if (updateTime.includes('T') && updateTime.endsWith('Z')) {
               date = new Date(updateTime);
-              date.setHours(date.getHours() + 9); // UTC to JST
+              date.setHours(date.getHours()); // UTC to JST
             } else {
               updateTime = '不明（形式エラー）';
             }
