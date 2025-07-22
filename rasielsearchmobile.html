@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- スマホ対応 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- ズーム防止追加 -->
   <title>Rasiel Search Mobile - Data</title>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 20px; }
@@ -31,7 +31,7 @@
     /* 検索機能のスタイル */
     #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
     #search-container { display: flex; align-items: center; }
-    #search-input { padding: 8px; margin-right: 5px; width: 200px; }
+    #search-input { padding: 8px; margin-right: 5px; width: 200px; font-size: 16px; } /* ズーム防止のためfont-size 16px */
     #search-button { padding: 8px 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     #search-button:hover { background-color: #218838; }
 
@@ -39,7 +39,7 @@
     @media (max-width: 600px) {
       #header-container { flex-direction: column; align-items: center; }
       #search-container { margin-top: 10px; justify-content: center; width: 100%; }
-      #search-input { width: 70%; }
+      #search-input { width: 70%; font-size: 16px; } /* ズーム防止 */
     }
   </style>
 </head>
@@ -263,15 +263,15 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能 (デバッグログ追加)
+    // 検索機能 (エラー防ぐ変換追加 + デバッグログ)
     function searchTable() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       if (query === '') {
         currentData = [...allData];
       } else {
         currentData = allData.filter(row => {
-          const name = (row['Hall_Name'] || '').toLowerCase();
-          const address = (row['Hall_Address'] || '').toLowerCase();
+          const name = String(row['Hall_Name'] || '').toLowerCase(); // 強制文字列変換
+          const address = String(row['Hall_Address'] || '').toLowerCase(); // 強制文字列変換
           return name.includes(query) || address.includes(query);
         });
       }
@@ -279,14 +279,15 @@
       renderTable(currentData);
     }
 
-    // コピー機能 (デバッグログ追加)
+    // コピー機能 (エラー防ぐ変換追加 + デバッグログ)
     function copyRowData(rowIndex) {
       const row = allData[rowIndex]; // allDataを使用
       if (!row) {
         console.error('Invalid row index:', rowIndex); // デバッグ
+        alert('行データの取得に失敗しました。');
         return;
       }
-
+    
       const appUrlMap = {
         'PsCUBE_URL': (v) => v,
         'Site777_ID': (v) => `https://m.site777.jp/f/D0100.do?pmc=${v}`,
@@ -297,20 +298,21 @@
         'Reito_ID': (v) => `https://reitoweb.com/b_moba/doc/news.php?h=${v}`,
         'PrimeAI_ID': (v) => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${v}`,
         'P-ASSiST_URL': (v) => v,
-        'DAIDATA_Online_ID': (v) => !v.endsWith('@LINE') ? `https://daidata.goraggio.com/${v}/` : null,
-        'PAPIMO_ID': (v) => /^\d{8}$/.test(v) ? `https://papimo.jp/h/${v}/` : null
+        'DAIDATA_Online_ID': (v) => !String(v).endsWith('@LINE') ? `https://daidata.goraggio.com/${v}/` : null, // String変換追加
+        'PAPIMO_ID': (v) => /^\d{8}$/.test(String(v)) ? `https://papimo.jp/h/${v}/` : null // String変換追加
       };
       const noLinkKeys = ['Maruhan_ID', 'PIA_ID', 'PachiPICKS_ID', 'JugglerOnline_ID', 'P-ken_ID', 'Star_ID', 'LINE_ID'];
-
+    
       const dataSiteKeys = [
         'Maruhan_ID', 'PIA_ID', 'PsCUBE_URL', 'Site777_ID', 'PachiPICKS_ID', 'JugglerOnline_ID',
         'DAIDATA_Online_ID', 'TERASmobile2_URL', 'PAPIMO_ID', 'P-moba_URL', 'P-do_ID', 'P-ken_ID',
         'P-tora_ID', 'Star_ID', 'Reito_ID', 'PrimeAI_ID', 'P-ASSiST_URL', 'LINE_ID'
       ];
-
+    
       let text = `⚫︎ ${row['Hall_Name'] || '不明'}`;
       dataSiteKeys.forEach(appKey => {
         let value = row[appKey] || '';
+        value = String(value); // 強制文字列変換（エラー防止）
         if (value && value !== '|') {
           const site = appKey.replace('_ID', '').replace('_URL', '');
           const parts = value.split('|').filter(p => p.trim());
@@ -333,9 +335,9 @@
           }
         }
       });
-
+    
       navigator.clipboard.writeText(text).then(() => {
-        console.log('Copy success for row:', rowIndex); // デバッグ (alert代替)
+        console.log('Copy success for row:', rowIndex); // デバッグ
         alert('クリップボードに情報をコピーしました');
       }).catch(err => {
         console.error('Copy failed for row:', rowIndex, err); // デバッグ
