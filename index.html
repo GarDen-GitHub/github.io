@@ -2,34 +2,62 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- スマホ対応 -->
-  <title>Rasiel Search Mobile - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- ズーム防止 -->
+  <title>Rasiel Search Mobile</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
-    #login-container { margin-top: 100px; }
-    input { width: 100%; max-width: 300px; margin: 10px 0; padding: 10px; box-sizing: border-box; }
-    button { padding: 10px 20px; }
-    @media (max-width: 600px) { body { padding: 10px; } }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #login-container {
+      margin-top: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    input {
+      width: 100%;
+      max-width: 300px;
+      margin: 10px 0;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px; /* パスワード入力欄とのバランス */
+    }
+    #login-error {
+      color: red;
+      margin-top: 10px;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      #login-container {
+        margin-top: 50px; /* モバイルで少し小さくしてバランス調整 */
+      }
+    }
   </style>
 </head>
 <body>
   <div id="login-container">
-    <h2>ログイン</h2>
-    <input type="text" id="username" placeholder="ユーザー名">
-    <input type="password" id="password" placeholder="パスワード">
+    <h2>Rasiel Search Mobile</h2>
+    <input type="text" id="username" placeholder="ユーザー名" onkeydown="if(event.key === 'Enter') document.getElementById('password').focus();">
+    <input type="password" id="password" placeholder="パスワード" onkeydown="if(event.key === 'Enter') loginUser();">
     <button onclick="loginUser()">ログイン</button>
-    <p id="login-error" style="color: red;"></p>
+    <p id="login-error"></p>
   </div>
 
   <script>
-    // 簡易ログイン（ハードコード: ユーザー名 'admin', パスワード 'password'。実際は変更）
     function loginUser() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const error = document.getElementById('login-error');
       
       if (username === 'Garden' && password === '282828') {
-        // ログイン成功: data.htmlに遷移（簡易的にlocalStorageでフラグを設定）
         localStorage.setItem('loggedIn', 'true');
         window.location.href = 'rasielsearchmobile.html';
       } else {
