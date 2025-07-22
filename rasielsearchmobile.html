@@ -19,7 +19,7 @@
       color: gray;
       margin-bottom: 10px;
       position: fixed;
-      top: 80px; /* ヘッダーの下に十分なスペース */
+      top: 80px;
       left: 0;
       width: 100%;
       background: white;
@@ -31,7 +31,7 @@
       overflow-y: auto;
       overflow-x: auto;
       min-width: 2770px;
-      margin-top: 120px; /* ヘッダーと更新日時の高さ分 */
+      margin-top: 120px;
     }
     table {
       width: 100%;
@@ -94,7 +94,7 @@
       color: gray;
       margin-top: 10px;
       position: fixed;
-      top: 110px; /* 更新日時の下 */
+      top: 110px;
       left: 0;
       width: 100%;
       z-index: 15;
@@ -120,7 +120,7 @@
       z-index: 20;
       padding: 10px 20px;
       box-sizing: border-box;
-      margin-top: 10px; /* 上部にスペースを確保 */
+      margin-top: 10px;
     }
     #search-container {
       display: flex;
@@ -158,7 +158,7 @@
         overflow-x: auto;
         overflow-y: auto;
         min-width: 2770px;
-        margin-top: 180px; /* ヘッダーと更新日時の高さ分 */
+        margin-top: 180px;
       }
       #header-container {
         flex-direction: column;
@@ -168,7 +168,7 @@
         left: 0;
         width: 100%;
         padding: 10px;
-        margin-top: 10px; /* 上部にスペースを確保 */
+        margin-top: 10px;
       }
       #search-container {
         margin-top: 10px;
@@ -181,13 +181,13 @@
       }
       #update-time {
         position: fixed;
-        top: 140px; /* ヘッダーと検索窓の下に十分なスペース */
+        top: 140px;
         left: 0;
         width: 100%;
       }
       #search-loading {
         position: fixed;
-        top: 170px; /* 更新日時の下 */
+        top: 170px;
         left: 0;
         width: 100%;
       }
@@ -203,8 +203,8 @@
         <button id="search-button" onclick="searchTable()">検索</button>
       </div>
     </div>
-    <p id="update-time"></p> <!-- 更新日時表示 -->
-    <div id="search-loading">検索中...</div> <!-- 検索中表示 -->
+    <p id="update-time"></p>
+    <div id="search-loading">検索中...</div>
     <div id="table-container">
       <table id="data-table">
         <thead id="table-head"></thead>
@@ -213,13 +213,12 @@
     </div>
   </div>
   
-  <div id="loading">店舗データ読込中...</div> <!-- ローディング表示 -->
+  <div id="loading">店舗データ読込中...</div>
 
   <script>
-    let allData = []; // データ全体をグローバルに保持
-    let currentData = []; // 検索結果用のデータ
+    let allData = [];
+    let currentData = [];
 
-    // ログイン状態チェック（未ログインならindex.htmlに戻す）
     if (localStorage.getItem('loggedIn') !== 'true') {
       window.location.href = 'index.html';
     } else {
@@ -227,11 +226,9 @@
       fetchData();
     }
 
-    // データ取得と表示
     function fetchData() {
       const apiUrl = 'https://script.google.com/macros/s/AKfycbx-8PrH2Sm7zvCyjPFnst4qRE1BkulkQOvpPupBxxRn_vhtNFsznG2rrLMFhZWxUH8VbA/exec';
       
-      // ローディング表示
       document.getElementById('loading').style.display = 'block';
       
       fetch(apiUrl)
@@ -240,21 +237,18 @@
           return response.json();
         })
         .then(responseData => {
-          console.log('Response Data:', responseData); // JSON構造確認
-          
           allData = responseData.data || [];
-          currentData = [...allData]; // 初期表示用
+          currentData = [...allData];
           
           let updateTime = responseData.updateTime || '不明';
           
-          // 更新日時のフォーマット変更
           if (updateTime !== '不明') {
             let date;
             if (updateTime.match(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}$/)) {
-              date = new Date(updateTime.replace(/\//g, '-')); // JST文字列をDateに
+              date = new Date(updateTime.replace(/\//g, '-'));
             } else if (updateTime.includes('T') && updateTime.endsWith('Z')) {
               date = new Date(updateTime);
-              date.setHours(date.getHours()); // UTC to JST
+              date.setHours(date.getHours());
             } else {
               updateTime = '不明（形式エラー）';
             }
@@ -270,7 +264,6 @@
           }
           document.getElementById('update-time').innerHTML = `データ更新日時: ${updateTime}`;
           
-          // ヘッダー作成 (改行追加)
           const displayHeaders = [
             '', '店舗名', '住所', 'P台数', 'S台数',
             'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
@@ -291,33 +284,27 @@
             renderTable(currentData);
           }
           
-          // ローディング非表示
           document.getElementById('loading').style.display = 'none';
         })
         .catch(error => {
-          console.error('Fetch error:', error.message);
           document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
           document.getElementById('loading').style.display = 'none';
         });
     }
 
-    // テーブル描画関数
     function renderTable(data) {
       let bodyRows = '';
       data.forEach((row, index) => {
         if (!row || typeof row !== 'object') {
-          console.warn(`Invalid row at index ${index}:`, row);
           return;
         }
         
-        // Maruhan以降のキー定義
         const dataSiteKeys = [
           'Maruhan_ID', 'PIA_ID', 'PsCUBE_URL', 'Site777_ID', 'PachiPICKS_ID', 'JugglerOnline_ID',
           'DAIDATA_Online_ID', 'TERASmobile2_URL', 'PAPIMO_ID', 'P-moba_URL', 'P-do_ID', 'P-ken_ID',
           'P-tora_ID', 'Star_ID', 'Reito_ID', 'PrimeAI_ID', 'P-ASSiST_URL', 'LINE_ID'
         ];
         
-        // Maruhan以降のデータサイトが存在するかチェック
         let hasDataSite = false;
         let allX = true;
         dataSiteKeys.forEach(key => {
@@ -328,28 +315,21 @@
           }
         });
         
-        // 行のクラス (すべて×ならgray-row)
         const rowClass = !hasDataSite ? ' class="gray-row"' : '';
         
         bodyRows += `<tr${rowClass} data-row-index="${allData.indexOf(row)}">`;
         
-        // コピー列: 存在する場合のみボタン
         if (hasDataSite) {
           bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${allData.indexOf(row)})">📋</button></td>`;
         } else {
           bodyRows += '<td></td>';
         }
         
-        // 基本列
         const basicKeys = ['Hall_Name', 'Hall_Address', 'P_Units', 'S_Units'];
         basicKeys.forEach((key, i) => {
-          if (!row.hasOwnProperty(key)) {
-            console.warn(`Missing key ${key} in row ${index}`);
-          }
           bodyRows += `<td${i < 2 ? ' class="left-align"' : ''}>${row[key] != null ? row[key] : ''}</td>`;
         });
         
-        // 都道府県ローマ字マッピング (DMM用)
         const prefMap = {
           '北海道': 'hokkaido', '青森県': 'aomori', '岩手県': 'iwate', '宮城県': 'miyagi', '秋田県': 'akita',
           '山形県': 'yamagata', '福島県': 'fukushima', '茨城県': 'ibaraki', '栃木県': 'tochigi', '群馬県': 'gunma',
@@ -363,11 +343,10 @@
           '鹿児島県': 'kagoshima', '沖縄県': 'okinawa'
         };
         
-        // カスタム列
         const customColumns = [
           { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
           { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
-            value = String(value); // 数値を文字列に変換
+            value = String(value);
             const prefName = (address || '').match(/^([^\d]+?[都道府県府])/)?.[1] || '';
             const prefRoman = prefMap[prefName] || '';
             return prefRoman ? `https://p-town.dmm.com/shops/${prefRoman}/${value}` : '';
@@ -396,12 +375,10 @@
         customColumns.forEach(col => {
           let value = row[col.key];
           if (value === undefined || value === null || value === '') {
-            console.warn(`Missing or empty key ${col.key} in row ${index}`);
             bodyRows += `<td>×</td>`;
           } else {
-            value = String(value); // 非文字列を変換
+            value = String(value);
             if (typeof value !== 'string') {
-              console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
               bodyRows += `<td>×</td>`;
             } else {
               const parts = value.split('|').filter(p => p.trim());
@@ -419,36 +396,29 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能 (スペース区切りのAND検索、半角/全角スペース対応、記号無視)
     function searchTable() {
-      document.getElementById('search-loading').style.display = 'block'; // 検索中表示
+      document.getElementById('search-loading').style.display = 'block';
       let query = document.getElementById('search-input').value.toLowerCase().trim();
       
-      // 半角/全角スペースを統一
-      query = query.replace(/\s+/g, ' '); // すべてのスペース（半角/全角）を半角スペースに
+      query = query.replace(/\s+/g, ' ');
       if (query === '') {
         currentData = [...allData];
       } else {
-        // 記号を削除
         const cleanQuery = query.replace(/[-,.!?;:"'()]/g, '');
-        const keywords = cleanQuery.split(' ').filter(k => k.length > 0); // スペースで分割し、空のキーワードを除外
+        const keywords = cleanQuery.split(' ').filter(k => k.length > 0);
         currentData = allData.filter(row => {
           const name = String(row['Hall_Name'] || '').toLowerCase().replace(/[-,.!?;:"'()]/g, '');
           const address = String(row['Hall_Address'] || '').toLowerCase().replace(/[-,.!?;:"'()]/g, '');
-          // すべてのキーワードが店舗名または住所に含まれる（分散マッチ可）
           return keywords.every(keyword => name.includes(keyword) || address.includes(keyword));
         });
       }
-      console.log('Search Query:', query, 'Cleaned Query:', query.replace(/[-,.!?;:"'()]/g, ''), 'Results:', currentData.length); // デバッグログ
       renderTable(currentData);
-      document.getElementById('search-loading').style.display = 'none'; // 検索中非表示
+      document.getElementById('search-loading').style.display = 'none';
     }
 
-    // コピー機能 (エラー防ぐ変換追加 + デバッグログ)
     function copyRowData(rowIndex) {
-      const row = allData[rowIndex]; // allDataを使用
+      const row = allData[rowIndex];
       if (!row) {
-        console.error('Invalid row index:', rowIndex); // デバッグ
         alert('行データの取得に失敗しました。');
         return;
       }
@@ -477,7 +447,7 @@
       let text = `⚫︎ ${row['Hall_Name'] || '不明'}`;
       dataSiteKeys.forEach(appKey => {
         let value = row[appKey] || '';
-        value = String(value); // 強制文字列変換（エラー防止）
+        value = String(value);
         if (value && value !== '|') {
           const site = appKey.replace('_ID', '').replace('_URL', '').replace('_', ' ');
           const parts = value.split('|').filter(p => p.trim());
@@ -502,10 +472,8 @@
       });
 
       navigator.clipboard.writeText(text).then(() => {
-        console.log('Copy success for row:', rowIndex); // デバッグ
         alert('クリップボードに情報をコピーしました');
       }).catch(err => {
-        console.error('Copy failed for row:', rowIndex, err); // デバッグ
         alert('クリップボードへのコピーに失敗しました: ' + err.message);
       });
     }
