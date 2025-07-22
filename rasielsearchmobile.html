@@ -9,10 +9,23 @@
     #data-container { display: none; }
     #update-time { text-align: center; font-size: 14px; color: gray; }
     table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; } /* スマホでスクロール可能 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } /* ヘッダーとデフォルトの中央寄せ */
     th { background-color: #f2f2f2; }
+    td.left-align { text-align: left; } /* 店舗名と住所の左寄せ */
+    .gray-row td { color: gray; } /* グレー行のスタイル */
+    button.copy-btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button.copy-btn:hover { background-color: #0056b3; }
     @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } }
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
+    
+    /* 列幅調整 */
+    th:nth-child(1), td:nth-child(1) { width: 5%; } /* コピー列 */
+    th:nth-child(2), td:nth-child(2) { width: 20%; text-align: left; } /* 店舗名 */
+    th:nth-child(3), td:nth-child(3) { width: 30%; text-align: left; } /* 住所 */
+    th:nth-child(4), td:nth-child(4) { width: 5%; } /* P台数 */
+    th:nth-child(5), td:nth-child(5) { width: 5%; } /* S台数 */
+    /* 残りの列は均等に分配 (例: 残り35% / 19列 ≈ 1.84% だが、autoで調整可能。明示的に均等にするため2%程度に設定) */
+    th:nth-child(n+6), td:nth-child(n+6) { width: 2%; } /* 残り列の均等幅 (調整可能) */
   </style>
 </head>
 <body>
@@ -28,6 +41,8 @@
   <div id="loading">店舗データ読込中...</div> <!-- ローディング表示 -->
 
   <script>
+    let allData = []; // データ全体をグローバルに保持
+
     // ログイン状態チェック（未ログインならindex.htmlに戻す）
     if (localStorage.getItem('loggedIn') !== 'true') {
       window.location.href = 'index.html';
@@ -52,6 +67,8 @@
           console.log('Response Data:', responseData); // JSON構造確認
           
           const data = responseData.data || [];
+          allData = [...data]; // データのコピー
+          
           let updateTime = responseData.updateTime || '不明';
           
           // 更新日時のフォーマット変更 (A1がJST文字列なら変換スキップ)
@@ -79,7 +96,7 @@
           
           // ヘッダー作成
           const displayHeaders = [
-            '店舗名', '住所', 'P台数', 'S台数',
+            '', '店舗名', '住所', 'P台数', 'S台数',
             'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
             'Site777', 'PachiPICKS', 'JugglerOnline', 'DAIDATA', 'TERASmobile2',
             'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
@@ -93,7 +110,7 @@
           document.getElementById('table-head').innerHTML = headerRow;
           
           if (data.length === 0) {
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データがありません。 (シートが空です)</td></tr>';
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データがありません。 (シートが空です)</td></tr>';
           } else {
             // ボディ作成
             try {
@@ -103,11 +120,40 @@
                   console.warn(`Invalid row at index ${index}:`, row);
                   return;
                 }
-                bodyRows += '<tr>';
+                
+                // Maruhan以降のキー定義 (customColumnsのMaruhan以降)
+                const dataSiteKeys = [
+                  'Maruhan_ID', 'PIA_ID', 'PsCUBE_URL', 'Site777_ID', 'PachiPICKS_ID', 'JugglerOnline_ID',
+                  'DAIDATA_Online_ID', 'TERASmobile2_URL', 'PAPIMO_ID', 'P-moba_URL', 'P-do_ID', 'P-ken_ID',
+                  'P-tora_ID', 'Star_ID', 'Reito_ID', 'PrimeAI_ID', 'P-ASSiST_URL', 'LINE_ID'
+                ];
+                
+                // Maruhan以降のデータサイトが存在するかチェック
+                let hasDataSite = false;
+                let allX = true;
+                dataSiteKeys.forEach(key => {
+                  const value = row[key];
+                  if (value && value !== '' && value !== '|') {
+                    hasDataSite = true;
+                    allX = false;
+                  }
+                });
+                
+                // 行のクラス (すべて×ならgray-row)
+                const rowClass = !hasDataSite ? ' class="gray-row"' : '';
+                
+                bodyRows += `<tr${rowClass}>`;
+                
+                // コピー列: 存在する場合のみボタン
+                if (hasDataSite) {
+                  bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${index})">コピー</button></td>`;
+                } else {
+                  bodyRows += '<td></td>';
+                }
                 
                 // 基本列
                 const basicKeys = ['Hall_Name', 'Hall_Address', 'P_Units', 'S_Units'];
-                basicKeys.forEach(key => {
+                basicKeys.forEach((key, i) => {
                   if (!row.hasOwnProperty(key)) {
                     console.warn(`Missing key ${key} in row ${index}`);
                   }
@@ -180,7 +226,7 @@
               document.getElementById('table-body').innerHTML = bodyRows;
             } catch (bodyError) {
               console.error('Body creation error:', bodyError.message);
-              document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データの取得に失敗しました。 (ボディ生成エラー: ' + bodyError.message + ')</td></tr>';
+              document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データの取得に失敗しました。 (ボディ生成エラー: ' + bodyError.message + ')</td></tr>';
             }
           }
           
@@ -189,9 +235,71 @@
         })
         .catch(error => {
           console.error('Fetch error:', error.message);
-          document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
+          document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
           document.getElementById('loading').style.display = 'none';
         });
+    }
+
+    // コピー機能 (指定形式に調整)
+    function copyRowData(rowIndex) {
+      const row = allData[rowIndex];
+      if (!row) return;
+
+      // Python参考のマップ定義 (指定形式に合うよう調整)
+      const appUrlMap = {
+        'PsCUBE_URL': (v) => v,
+        'Site777_ID': (v) => `https://m.site777.jp/f/D0100.do?pmc=${v}`,
+        'TERASmobile2_URL': (v) => v,
+        'P-moba_URL': (v) => v,
+        'P-do_ID': (v) => `https://www.p-do.ne.jp/k_mch.cgi?ln=${v}`,
+        'P-tora_ID': (v) => `https://p-tora.com/smafo/dedamajyoho-P-townDMMpachi/item.html?no=${v}`,
+        'Reito_ID': (v) => `https://reitoweb.com/b_moba/doc/news.php?h=${v}`,
+        'PrimeAI_ID': (v) => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${v}`,
+        'P-ASSiST_URL': (v) => v,
+        'DAIDATA_Online_ID': (v) => !v.endsWith('@LINE') ? `https://daidata.goraggio.com/${v}/` : null,
+        'PAPIMO_ID': (v) => /^\d{8}$/.test(v) ? `https://papimo.jp/h/${v}/` : null
+      };
+      const noLinkKeys = ['Maruhan_ID', 'PIA_ID', 'PachiPICKS_ID', 'JugglerOnline_ID', 'P-ken_ID', 'Star_ID', 'LINE_ID'];
+
+      // passthrough_columns[3:] に相当 (Maruhan以降)
+      const dataSiteKeys = [
+        'Maruhan_ID', 'PIA_ID', 'PsCUBE_URL', 'Site777_ID', 'PachiPICKS_ID', 'JugglerOnline_ID',
+        'DAIDATA_Online_ID', 'TERASmobile2_URL', 'PAPIMO_ID', 'P-moba_URL', 'P-do_ID', 'P-ken_ID',
+        'P-tora_ID', 'Star_ID', 'Reito_ID', 'PrimeAI_ID', 'P-ASSiST_URL', 'LINE_ID'
+      ];
+
+      let text = `⚫︎ ${row['Hall_Name'] || '不明'}`;
+      dataSiteKeys.forEach(appKey => {
+        let value = row[appKey] || '';
+        if (value && value !== '|') {
+          const site = appKey.replace('_ID', '').replace('_URL', '');
+          const parts = value.split('|').filter(p => p.trim());
+          if (parts.length > 0) {
+            text += `\n・${site}`;
+            parts.forEach(part => {
+              if (noLinkKeys.includes(appKey)) {
+                text += `\nID: ${part}`;
+              } else if (appUrlMap[appKey]) {
+                const url = appUrlMap[appKey](part);
+                if (url) {
+                  text += `\n${url}`;
+                } else {
+                  text += `\nID: ${part}`;
+                }
+              } else {
+                text += `\nID: ${part}`;
+              }
+            });
+          }
+        }
+      });
+
+      // クリップボードコピー
+      navigator.clipboard.writeText(text).then(() => {
+        alert('クリップボードに情報をコピーしました');
+      }).catch(err => {
+        alert('クリップボードへのコピーに失敗しました: ' + err.message);
+      });
     }
   </script>
 </body>
