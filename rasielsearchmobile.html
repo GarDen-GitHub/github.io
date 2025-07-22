@@ -263,7 +263,7 @@
       document.getElementById('table-body').innerHTML = bodyRows;
     }
 
-    // 検索機能
+    // 検索機能 (デバッグログ追加)
     function searchTable() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
       if (query === '') {
@@ -275,13 +275,17 @@
           return name.includes(query) || address.includes(query);
         });
       }
+      console.log('Search Query:', query, 'Results:', currentData.length); // デバッグログ
       renderTable(currentData);
     }
 
-    // コピー機能
+    // コピー機能 (デバッグログ追加)
     function copyRowData(rowIndex) {
       const row = allData[rowIndex]; // allDataを使用
-      if (!row) return;
+      if (!row) {
+        console.error('Invalid row index:', rowIndex); // デバッグ
+        return;
+      }
 
       const appUrlMap = {
         'PsCUBE_URL': (v) => v,
@@ -331,8 +335,10 @@
       });
 
       navigator.clipboard.writeText(text).then(() => {
+        console.log('Copy success for row:', rowIndex); // デバッグ (alert代替)
         alert('クリップボードに情報をコピーしました');
       }).catch(err => {
+        console.error('Copy failed for row:', rowIndex, err); // デバッグ
         alert('クリップボードへのコピーに失敗しました: ' + err.message);
       });
     }
