@@ -2,13 +2,23 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Sheet Data Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- スマホ対応 -->
+  <title>Rasiel Search Mobile</title>
   <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; }
     #login-container { display: block; text-align: center; margin-top: 100px; }
+    #login-container input { width: 100%; max-width: 300px; margin: 10px 0; padding: 10px; box-sizing: border-box; }
+    #login-container button { padding: 10px 20px; }
     #data-container { display: none; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
+    #update-time { text-align: center; font-size: 14px; color: gray; }
+    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; } /* テーブルをスマホでスクロール可能 */
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
+    @media (max-width: 600px) { /* スマホ調整 */
+      body { padding: 10px; }
+      table { font-size: 12px; }
+    }
+    #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
   </style>
 </head>
 <body>
@@ -22,11 +32,14 @@
   
   <div id="data-container">
     <h2>スプレッドシートデータ</h2>
+    <p id="update-time"></p> <!-- 更新日時表示 -->
     <table id="data-table">
       <thead id="table-head"></thead>
       <tbody id="table-body"></tbody>
     </table>
   </div>
+  
+  <div id="loading">店舗データ読込中...</div> <!-- ローディング表示 -->
 
   <script src="script.js"></script>
 </body>
