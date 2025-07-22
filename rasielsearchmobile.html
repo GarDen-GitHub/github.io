@@ -46,14 +46,15 @@
       fetch(apiUrl)
         .then(response => response.json())
         .then(responseData => {
-          const data = responseData.data;
-          let updateTime = responseData.updateTime;
+          console.log('Response Data:', responseData); // ConsoleでJSON確認
           
-          // 更新日時のフォーマット変更 (UTC → JST, 2025/07/22 10:38:05形式)
-          if (updateTime && updateTime !== '不明') {
+          const data = responseData.data || []; // dataがundefinedの場合空配列
+          let updateTime = responseData.updateTime || '不明';
+          
+          // 更新日時のフォーマット変更 (ISO形式の場合のみUTC → JST)
+          if (updateTime !== '不明') {
             const date = new Date(updateTime);
-            // A1がJST文字列の場合、変換不要。ISO形式（UTC）の場合のみ+9
-            if (updateTime.includes('T') && updateTime.endsWith('Z')) {
+            if (!isNaN(date) && updateTime.includes('T') && updateTime.endsWith('Z')) {
               date.setHours(date.getHours() + 9); // UTC to JST
             }
             const year = date.getFullYear();
@@ -63,13 +64,11 @@
             const minutes = String(date.getMinutes()).padStart(2, '0');
             const seconds = String(date.getSeconds()).padStart(2, '0');
             updateTime = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
-          } else {
-            updateTime = '不明';
           }
           document.getElementById('update-time').innerHTML = `データ更新日時: ${updateTime}`;
           
           if (data.length === 0) {
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データがありません。</td></tr>';
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。 (データが空です)</td></tr>';
           } else {
             // 表示列の定義 (カスタム列名)
             const displayHeaders = [
@@ -77,7 +76,7 @@
               'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
               'Site777', 'PachiPICKS', 'JugglerOnline', 'DAIDATA', 'TERASmobile2',
               'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
-              'PrimeAI', 'P-ASSiST', 'Star' // LINE_IDをStarとして追加 (重複指定)
+              'PrimeAI', 'P-ASSiST', 'LINE'
             ];
             
             // 都道府県ローマ字マッピング (DMM用)
@@ -103,62 +102,67 @@
             document.getElementById('table-head').innerHTML = headerRow;
             
             // ボディ作成 (カスタム表示)
-            let bodyRows = '';
-            data.forEach(row => {
-              bodyRows += '<tr>';
-              
-              // 基本列
-              bodyRows += `<td>${row['Hall_Name'] || ''}</td>`; // 店舗名
-              bodyRows += `<td>${row['Hall_Address'] || ''}</td>`; // 住所
-              bodyRows += `<td>${row['P_Units'] || ''}</td>`; // P台数
-              bodyRows += `<td>${row['S_Units'] || ''}</td>`; // S台数
-              
-              // カスタム列 (P-WORLD_ID以降)
-              const customColumns = [
-                { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
-                { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
-                  const prefName = (address || '').match(/^[^\d]+?[都道府県府]/)?.[0] || '';
-                  const prefRoman = prefMap[prefName] || '';
-                  return `https://p-town.dmm.com/shops/${prefRoman}/${value}`;
-                } },
-                { key: 'MinPachi_ID', name: 'みんパチ', link: value => `https://minpachi.com/${value}/` },
-                { key: 'Maruhan_ID', name: 'Maruhan', link: null },
-                { key: 'PIA_ID', name: 'PIA', link: null },
-                { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
-                { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
-                { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
-                { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
-                { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => `@LINE` in value ? null : `https://daidata.goraggio.com/${value}/` },
-                { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
-                { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => value.length === 8 ? `https://papimo.jp/h/${value}/` : null },
-                { key: 'P-moba_URL', name: 'P-moba', link: value => value },
-                { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
-                { key: 'P-ken_ID', name: 'P-ken', link: null },
-                { key: 'P-tora_ID', name: 'P-tora', link: value => `https://p-tora.com/smafo/dedamajyoho-P-townDMMpachi/item.html?no=${value}` },
-                { key: 'Star_ID', name: 'Star', link: null },
-                { key: 'Reito_ID', name: 'Reito', link: value => `https://reitoweb.com/b_moba/doc/news.php?h=${value}` },
-                { key: 'PrimeAI_ID', name: 'PrimeAI', link: value => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${value}` },
-                { key: 'P-ASSiST_URL', name: 'P-ASSiST', link: value => value },
-                { key: 'LINE_ID', name: 'LINE', link: null }
-              ];
-              
-              customColumns.forEach(col => {
-                const value = row[col.key] || '';
-                if (!value) {
-                  bodyRows += `<td>×</td>`;
-                } else {
-                  const parts = value.split('|').filter(p => p.trim());
-                  let display = parts.map(p => {
-                    let link = col.link ? col.link(p, row['Hall_Address']) : null;
-                    return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
-                  }).join(' ');
-                  bodyRows += `<td>${display}</td>`;
-                }
+            try {
+              let bodyRows = '';
+              data.forEach(row => {
+                bodyRows += '<tr>';
+                
+                // 基本列
+                bodyRows += `<td>${row['Hall_Name'] || ''}</td>`; // 店舗名
+                bodyRows += `<td>${row['Hall_Address'] || ''}</td>`; // 住所
+                bodyRows += `<td>${row['P_Units'] || ''}</td>`; // P台数
+                bodyRows += `<td>${row['S_Units'] || ''}</td>`; // S台数
+                
+                // カスタム列 (P-WORLD_ID以降)
+                const customColumns = [
+                  { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
+                  { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
+                    const prefName = (address || '').match(/^[^\d]+?[都道府県府]/)?.[0] || '';
+                    const prefRoman = prefMap[prefName] || '';
+                    return `https://p-town.dmm.com/shops/${prefRoman}/${value}`;
+                  } },
+                  { key: 'MinPachi_ID', name: 'みんパチ', link: value => `https://minpachi.com/${value}/` },
+                  { key: 'Maruhan_ID', name: 'Maruhan', link: null },
+                  { key: 'PIA_ID', name: 'PIA', link: null },
+                  { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
+                  { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
+                  { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
+                  { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
+                  { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => `@LINE` in value ? null : `https://daidata.goraggio.com/${value}/` },
+                  { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
+                  { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => value.length === 8 ? `https://papimo.jp/h/${value}/` : null },
+                  { key: 'P-moba_URL', name: 'P-moba', link: value => value },
+                  { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
+                  { key: 'P-ken_ID', name: 'P-ken', link: null },
+                  { key: 'P-tora_ID', name: 'P-tora', link: value => `https://p-tora.com/smafo/dedamajyoho-P-townDMMpachi/item.html?no=${value}` },
+                  { key: 'Star_ID', name: 'Star', link: null },
+                  { key: 'Reito_ID', name: 'Reito', link: value => `https://reitoweb.com/b_moba/doc/news.php?h=${value}` },
+                  { key: 'PrimeAI_ID', name: 'PrimeAI', link: value => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${value}` },
+                  { key: 'P-ASSiST_URL', name: 'P-ASSiST', link: value => value },
+                  { key: 'LINE_ID', name: 'LINE', link: null }
+                ];
+                
+                customColumns.forEach(col => {
+                  const value = row[col.key] || '';
+                  if (!value) {
+                    bodyRows += `<td>×</td>`;
+                  } else {
+                    const parts = value.split('|').filter(p => p.trim());
+                    let display = parts.map(p => {
+                      let link = col.link ? col.link(p, row['Hall_Address']) : null;
+                      return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
+                    }).join(' ');
+                    bodyRows += `<td>${display}</td>`;
+                  }
+                });
+                
+                bodyRows += '</tr>';
               });
-              
-              bodyRows += '</tr>';
-            });
-            document.getElementById('table-body').innerHTML = bodyRows;
+              document.getElementById('table-body').innerHTML = bodyRows;
+            } catch (bodyError) {
+              console.error('Body creation error:', bodyError);
+              document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。 (ボディ生成エラー)</td></tr>';
+            }
           }
           
           // ローディング非表示
