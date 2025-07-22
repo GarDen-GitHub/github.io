@@ -23,11 +23,11 @@
     
     /* 列幅調整 (px単位で固定, 合計を考慮) */
     th:nth-child(1), td:nth-child(1) { width: 50px; } /* コピー列 */
-    th:nth-child(2), td:nth-child(2) { width: 150px; } /* 店舗名 (調整) */
-    th:nth-child(3), td:nth-child(3) { width: 250px; } /* 住所 (調整) */
-    th:nth-child(4), td:nth-child(4) { width: 50px; } /* P台数 */
-    th:nth-child(5), td:nth-child(5) { width: 50px; } /* S台数 */
-    th:nth-child(n+6), td:nth-child(n+6) { width: 40px; } /* 残り列 (均等固定) */
+    th:nth-child(2), td:nth-child(2) { width: 200px; } /* 店舗名 (調整) */
+    th:nth-child(3), td:nth-child(3) { width: 200px; } /* 住所 (調整) */
+    th:nth-child(4), td:nth-child(4) { width: 70px; } /* P台数 */
+    th:nth-child(5), td:nth-child(5) { width: 70px; } /* S台数 */
+    th:nth-child(n+6), td:nth-child(n+6) { width: 100px; } /* 残り列 (均等固定) */
 
     /* 検索機能のスタイル */
     #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
@@ -41,8 +41,6 @@
       #header-container { flex-direction: column; align-items: center; }
       #search-container { margin-top: 10px; justify-content: center; width: 100%; }
       #search-input { width: 70%; font-size: 16px; }
-      th:nth-child(2), td:nth-child(2) { width: 120px; } /* モバイル調整 */
-      th:nth-child(3), td:nth-child(3) { width: 200px; } /* モバイル調整 */
     }
   </style>
 </head>
