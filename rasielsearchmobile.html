@@ -10,8 +10,8 @@
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
     table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; } /* デフォルトの中央寄せ + 折り返し + 固定 */
-    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* デフォルトの中央寄せ + 折り返しなし + 1行表示 */
+    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; white-space: pre-line; } /* ヘッダー固定 + 改行許可 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
     th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
     .gray-row td { color: gray; } /* グレー行のスタイル */
@@ -56,8 +56,8 @@
       </div>
     </div>
     <p id="update-time"></p> <!-- 更新日時表示 -->
-    <div id="search-loading">検索中...</div> <!-- 検索中表示 */
-  <div id="table-container">
+    <div id="search-loading">検索中...</div> <!-- 検索中表示 -->
+    <div id="table-container">
       <table id="data-table">
         <thead id="table-head"></thead>
         <tbody id="table-body"></tbody>
@@ -83,8 +83,12 @@
     function fetchData() {
       const apiUrl = 'https://script.google.com/macros/s/AKfycbx-8PrH2Sm7zvCyjPFnst4qRE1BkulkQOvpPupBxxRn_vhtNFsznG2rrLMFhZWxUH8VbA/exec';
       
-      // ローディング表示
-      document.getElementById('loading').style.display = 'block';
+      const loadingElement = document.getElementById('loading');
+      if (loadingElement) {
+        loadingElement.style.display = 'block';
+      } else {
+        console.warn('Loading element not found');
+      }
       
       fetch(apiUrl)
         .then(response => {
@@ -122,11 +126,11 @@
           }
           document.getElementById('update-time').innerHTML = `データ更新日時: ${updateTime}`;
           
-          // ヘッダー作成
+          // ヘッダー作成 (改行追加)
           const displayHeaders = [
             '', '店舗名', '住所', 'P台数', 'S台数',
             'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
-            'Site777', 'PachiPICKS', 'JugglerOnline', 'DAIDATA', 'TERASmobile2',
+            'Site777', 'Pachi\nPICKS', 'Juggler\nOnline', 'DAIDATA\nOnline', 'TERAS\nmobile2',
             'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
             'PrimeAI', 'P-ASSiST', 'LINE'
           ];
@@ -144,12 +148,16 @@
           }
           
           // ローディング非表示
-          document.getElementById('loading').style.display = 'none';
+          if (loadingElement) {
+            loadingElement.style.display = 'none';
+          }
         })
         .catch(error => {
           console.error('Fetch error:', error.message);
           document.getElementById('table-body').innerHTML = '<tr><td colspan="26">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
-          document.getElementById('loading').style.display = 'none';
+          if (loadingElement) {
+            loadingElement.style.display = 'none';
+          }
         });
     }
 
