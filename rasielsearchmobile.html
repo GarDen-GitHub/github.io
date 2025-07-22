@@ -7,27 +7,28 @@
   <style>
     body { font-family: sans-serif; margin: 0; padding: 20px; }
     #data-container { display: none; }
-    #update-time { text-align: center; font-size: 14px; color: gray; }
-    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; } /* スマホでスクロール可能 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } /* ヘッダーとデフォルトの中央寄せ */
-    th { background-color: #f2f2f2; }
+    #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; }
+    #table-container { max-height: 60vh; overflow-y: auto; } /* テーブルスクロール */
+    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } /* デフォルトの中央寄せ */
+    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
+    td.left-align { text-align: left; } /* 店舗名と住所の左寄せ */
     .gray-row td { color: gray; } /* グレー行のスタイル */
     button.copy-btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button.copy-btn:hover { background-color: #0056b3; }
-    @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } }
+    @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } #table-container { max-height: 50vh; } }
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
     
     /* 列幅調整 */
     th:nth-child(1), td:nth-child(1) { width: 5%; } /* コピー列 */
-    th:nth-child(2), td:nth-child(2) { width: 20%; } /* 店舗名 (中央寄せ) */
-    th:nth-child(3), td:nth-child(3) { width: 30%; } /* 住所 (中央寄せ) */
+    th:nth-child(2), td:nth-child(2) { width: 20%; text-align: left; } /* 店舗名 */
+    th:nth-child(3), td:nth-child(3) { width: 30%; text-align: left; } /* 住所 */
     th:nth-child(4), td:nth-child(4) { width: 5%; } /* P台数 */
     th:nth-child(5), td:nth-child(5) { width: 5%; } /* S台数 */
-    /* 残りの列は均等に分配 */
-    th:nth-child(n+6), td:nth-child(n+6) { width: 2%; } /* 残り列の均等幅 (調整可能) */
+    th:nth-child(n+6), td:nth-child(n+6) { width: 2%; } /* 残り列の均等幅 */
 
     /* 検索機能のスタイル */
-    #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
     #search-container { display: flex; align-items: center; }
     #search-input { padding: 8px; margin-right: 5px; width: 200px; }
     #search-button { padding: 8px 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
@@ -46,15 +47,17 @@
     <div id="header-container">
       <h2>Rasiel Search Mobile</h2>
       <div id="search-container">
-        <input type="text" id="search-input" placeholder="店舗名 or 住所で検索">
+        <input type="text" id="search-input" placeholder="店舗名 or 住所で検索" oninput="searchTable()">
         <button id="search-button" onclick="searchTable()">検索</button>
       </div>
     </div>
     <p id="update-time"></p> <!-- 更新日時表示 -->
-    <table id="data-table">
-      <thead id="table-head"></thead>
-      <tbody id="table-body"></tbody>
-    </table>
+    <div id="table-container">
+      <table id="data-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
   </div>
   
   <div id="loading">店舗データ読込中...</div> <!-- ローディング表示 -->
@@ -91,7 +94,7 @@
           
           let updateTime = responseData.updateTime || '不明';
           
-          // 更新日時のフォーマット変更 (A1がJST文字列なら変換スキップ)
+          // 更新日時のフォーマット変更
           if (updateTime !== '不明') {
             let date;
             if (updateTime.match(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}$/)) {
@@ -123,7 +126,7 @@
             'PrimeAI', 'P-ASSiST', 'LINE'
           ];
           let headerRow = '<tr>';
-          displayHeaders.forEach(header => {
+          display FortalezaHeaders.forEach(header => {
             headerRow += `<th>${header}</th>`;
           });
           headerRow += '</tr>';
@@ -175,11 +178,11 @@
         // 行のクラス (すべて×ならgray-row)
         const rowClass = !hasDataSite ? ' class="gray-row"' : '';
         
-        bodyRows += `<tr${rowClass}>`;
+        bodyRows += `<tr${rowClass} data-row-index="${allData.indexOf(row)}">`;
         
         // コピー列: 存在する場合のみボタン
         if (hasDataSite) {
-          bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${index})">📋</button></td>`;
+          bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${allData.indexOf(row)})">📋</button></td>`;
         } else {
           bodyRows += '<td></td>';
         }
@@ -190,7 +193,7 @@
           if (!row.hasOwnProperty(key)) {
             console.warn(`Missing key ${key} in row ${index}`);
           }
-          bodyRows += `<td>${row[key] != null ? row[key] : ''}</td>`;
+          bodyRows += `<td${i < 2 ? ' class="left-align"' : ''}>${row[key] != null ? row[key] : ''}</td>`;
         });
         
         // 都道府県ローマ字マッピング (DMM用)
@@ -276,9 +279,7 @@
 
     // コピー機能
     function copyRowData(rowIndex) {
-      // 注意: 検索後でも元のallDataのindexを使用しているため、currentDataを使用するよう修正
-      // しかしindexはallDataのものなので、検索時はcurrentData[rowIndex]を使用
-      const row = currentData[rowIndex];
+      const row = allData[rowIndex]; // allDataを使用
       if (!row) return;
 
       const appUrlMap = {
