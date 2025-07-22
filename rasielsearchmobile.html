@@ -44,138 +44,151 @@
       document.getElementById('loading').style.display = 'block';
       
       fetch(apiUrl)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
         .then(responseData => {
-          console.log('Response Data:', responseData); // ConsoleでJSON構造確認
+          console.log('Response Data:', responseData); // JSON構造確認
           
-          const data = responseData.data || []; // dataがundefinedの場合空配列
+          const data = responseData.data || [];
           let updateTime = responseData.updateTime || '不明';
           
-          // 更新日時のフォーマット変更 (ISO形式の場合のみUTC → JST)
+          // 更新日時のフォーマット変更 (A1がJST文字列なら変換スキップ)
           if (updateTime !== '不明') {
-            const date = new Date(updateTime);
-            if (!isNaN(date) && updateTime.includes('T') && updateTime.endsWith('Z')) {
+            let date;
+            if (updateTime.match(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}$/)) {
+              date = new Date(updateTime.replace(/\//g, '-')); // JST文字列をDateに
+            } else if (updateTime.includes('T') && updateTime.endsWith('Z')) {
+              date = new Date(updateTime);
               date.setHours(date.getHours() + 9); // UTC to JST
+            } else {
+              updateTime = '不明（形式エラー）';
             }
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            updateTime = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+            if (date && !isNaN(date)) {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              const seconds = String(date.getSeconds()).padStart(2, '0');
+              updateTime = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+            }
           }
           document.getElementById('update-time').innerHTML = `データ更新日時: ${updateTime}`;
           
+          // ヘッダー作成
+          const displayHeaders = [
+            '店舗名', '住所', 'P台数', 'S台数',
+            'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
+            'Site777', 'PachiPICKS', 'JugglerOnline', 'DAIDATA', 'TERASmobile2',
+            'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
+            'PrimeAI', 'P-ASSiST', 'LINE'
+          ];
+          let headerRow = '<tr>';
+          displayHeaders.forEach(header => {
+            headerRow += `<th>${header}</th>`;
+          });
+          headerRow += '</tr>';
+          document.getElementById('table-head').innerHTML = headerRow;
+          
           if (data.length === 0) {
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。 (データが空です)</td></tr>';
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データがありません。 (シートが空です)</td></tr>';
           } else {
-            // 表示列の定義 (カスタム列名)
-            const displayHeaders = [
-              '店舗名', '住所', 'P台数', 'S台数',
-              'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
-              'Site777', 'PachiPICKS', 'JugglerOnline', 'DAIDATA', 'TERASmobile2',
-              'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
-              'PrimeAI', 'P-ASSiST', 'LINE'
-            ];
-            
-            // 都道府県ローマ字マッピング (DMM用)
-            const prefMap = {
-              '北海道': 'hokkaido', '青森県': 'aomori', '岩手県': 'iwate', '宮城県': 'miyagi', '秋田県': 'akita',
-              '山形県': 'yamagata', '福島県': 'fukushima', '茨城県': 'ibaraki', '栃木県': 'tochigi', '群馬県': 'gunma',
-              '埼玉県': 'saitama', '千葉県': 'chiba', '東京都': 'tokyo', '神奈川県': 'kanagawa', '新潟県': 'niigata',
-              '富山県': 'toyama', '石川県': 'ishikawa', '福井県': 'fukui', '山梨県': 'yamanashi', '長野県': 'nagano',
-              '岐阜県': 'gifu', '静岡県': 'shizuoka', '愛知県': 'aichi', '三重県': 'mie', '滋賀県': 'shiga',
-              '京都府': 'kyoto', '大阪府': 'osaka', '兵庫県': 'hyogo', '奈良県': 'nara', '和歌山県': 'wakayama',
-              '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayama', '広島県': 'hiroshima', '山口県': 'yamaguchi',
-              '徳島県': 'tokushima', '香川県': 'kagawa', '愛媛県': 'ehime', '高知県': 'kochi', '福岡県': 'fukuoka',
-              '佐賀県': 'saga', '長崎県': 'nagasaki', '熊本県': 'kumamoto', '大分県': 'oita', '宮崎県': 'miyazaki',
-              '鹿児島県': 'kagoshima', '沖縄県': 'okinawa'
-            };
-            
-            // ヘッダー作成
-            let headerRow = '<tr>';
-              displayHeaders.forEach(header => {
-                headerRow += `<th>${header}</th>`;
-              });
-              headerRow += '</tr>';
-              document.getElementById('table-head').innerHTML = headerRow;
-              
-              if (data.length === 0) {
-                document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データがありません。 (シートが空です)</td></tr>';
-              } else {
-                // ボディ作成 (キー存在チェック追加)
-                try {
-                  let bodyRows = '';
-                  data.forEach(row => {
-                    bodyRows += '<tr>';
-                    
-                    // 基本列 (キー存在チェック)
-                    bodyRows += `<td>${row.hasOwnProperty('Hall_Name') ? row['Hall_Name'] : ''}</td>`; // 店舗名
-                    bodyRows += `<td>${row.hasOwnProperty('Hall_Address') ? row['Hall_Address'] : ''}</td>`; // 住所
-                    bodyRows += `<td>${row.hasOwnProperty('P_Units') ? row['P_Units'] : ''}</td>`; // P台数
-                    bodyRows += `<td>${row.hasOwnProperty('S_Units') ? row['S_Units'] : ''}</td>`; // S台数
-                    
-                    // カスタム列 (キー存在チェック)
-                    const customColumns = [
-                      { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
-                      { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
-                        const prefName = (address || '').match(/^[^\d]+?[都道府県府]/)?.[0] || '';
-                        const prefRoman = prefMap[prefName] || '';
-                        return `https://p-town.dmm.com/shops/${prefRoman}/${value}`;
-                      } },
-                      { key: 'MinPachi_ID', name: 'みんパチ', link: value => `https://minpachi.com/${value}/` },
-                      { key: 'Maruhan_ID', name: 'Maruhan', link: null },
-                      { key: 'PIA_ID', name: 'PIA', link: null },
-                      { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
-                      { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
-                      { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
-                      { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
-                      { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => value.includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
-                      { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
-                      { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => value.length === 8 ? `https://papimo.jp/h/${value}/` : null },
-                      { key: 'P-moba_URL', name: 'P-moba', link: value => value },
-                      { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
-                      { key: 'P-ken_ID', name: 'P-ken', link: null },
-                      { key: 'P-tora_ID', name: 'P-tora', link: value => `https://p-tora.com/smafo/dedamajyoho-P-townDMMpachi/item.html?no=${value}` },
-                      { key: 'Star_ID', name: 'Star', link: null },
-                      { key: 'Reito_ID', name: 'Reito', link: value => `https://reitoweb.com/b_moba/doc/news.php?h=${value}` },
-                      { key: 'PrimeAI_ID', name: 'PrimeAI', link: value => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${value}` },
-                      { key: 'P-ASSiST_URL', name: 'P-ASSiST', link: value => value },
-                      { key: 'LINE_ID', name: 'LINE', link: null } // 修正
-                    ];
-                    
-                    customColumns.forEach(col => {
-                      if (!row.hasOwnProperty(col.key) || !row[col.key]) {
-                        bodyRows += `<td>×</td>`;
-                      } else {
-                        const value = row[col.key];
-                        const parts = value.split('|').filter(p => p.trim());
-                        let display = parts.map(p => {
-                          let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
-                          return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
-                        }).join(' ');
-                        bodyRows += `<td>${display}</td>`;
-                      }
-                    });
-                    
-                    bodyRows += '</tr>';
-                  });
-                  document.getElementById('table-body').innerHTML = bodyRows;
-                } catch (bodyError) {
-                  console.error('Body creation error:', bodyError.message);
-                  document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。 (ボディ生成エラー: ' + bodyError.message + ')</td></tr>';
+            // ボディ作成
+            try {
+              let bodyRows = '';
+              data.forEach((row, index) => {
+                if (!row || typeof row !== 'object') {
+                  console.warn(`Invalid row at index ${index}:`, row);
+                  return;
                 }
-              }
-              
-              // ローディング非表示
-              document.getElementById('loading').style.display = 'none';
-            })
-            .catch(error => {
-              console.error('Fetch error:', error.message);
-              document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
-              document.getElementById('loading').style.display = 'none';
-            });
+                bodyRows += '<tr>';
+                
+                // 基本列
+                const basicKeys = ['Hall_Name', 'Hall_Address', 'P_Units', 'S_Units'];
+                basicKeys.forEach(key => {
+                  if (!row.hasOwnProperty(key)) {
+                    console.warn(`Missing key ${key} in row ${index}`);
+                  }
+                  bodyRows += `<td>${row[key] || ''}</td>`;
+                });
+                
+                // 都道府県ローマ字マッピング (DMM用)
+                const prefMap = {
+                  '北海道': 'hokkaido', '青森県': 'aomori', '岩手県': 'iwate', '宮城県': 'miyagi', '秋田県': 'akita',
+                  '山形県': 'yamagata', '福島県': 'fukushima', '茨城県': 'ibaraki', '栃木県': 'tochigi', '群馬県': 'gunma',
+                  '埼玉県': 'saitama', '千葉県': 'chiba', '東京都': 'tokyo', '神奈川県': 'kanagawa', '新潟県': 'niigata',
+                  '富山県': 'toyama', '石川県': 'ishikawa', '福井県': 'fukui', '山梨県': 'yamanashi', '長野県': 'nagano',
+                  '岐阜県': 'gifu', '静岡県': 'shizuoka', '愛知県': 'aichi', '三重県': 'mie', '滋賀県': 'shiga',
+                  '京都府': 'kyoto', '大阪府': 'osaka', '兵庫県': 'hyogo', '奈良県': 'nara', '和歌山県': 'wakayama',
+                  '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayama', '広島県': 'hiroshima', '山口県': 'yamaguchi',
+                  '徳島県': 'tokushima', '香川県': 'kagawa', '愛媛県': 'ehime', '高知県': 'kochi', '福岡県': 'fukuoka',
+                  '佐賀県': 'saga', '長崎県': 'nagasaki', '熊本県': 'kumamoto', '大分県': 'oita', '宮崎県': 'miyazaki',
+                  '鹿児島県': 'kagoshima', '沖縄県': 'okinawa'
+                };
+                
+                // カスタム列
+                const customColumns = [
+                  { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
+                  { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
+                    const prefName = (address || '').match(/^[^\d]+?[都道府県府]/)?.[0] || '';
+                    const prefRoman = prefMap[prefName] || '';
+                    return prefRoman ? `https://p-town.dmm.com/shops/${prefRoman}/${value}` : '';
+                  } },
+                  { key: 'MinPachi_ID', name: 'みんパチ', link: value => `https://minpachi.com/${value}/` },
+                  { key: 'Maruhan_ID', name: 'Maruhan', link: null },
+                  { key: 'PIA_ID', name: 'PIA', link: null },
+                  { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
+                  { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
+                  { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
+                  { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
+                  { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => value.includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
+                  { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
+                  { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => value.length === 8 ? `https://papimo.jp/h/${value}/` : null },
+                  { key: 'P-moba_URL', name: 'P-moba', link: value => value },
+                  { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
+                  { key: 'P-ken_ID', name: 'P-ken', link: null },
+                  { key: 'P-tora_ID', name: 'P-tora', link: value => `https://p-tora.com/smafo/dedamajyoho-P-townDMMpachi/item.html?no=${value}` },
+                  { key: 'Star_ID', name: 'Star', link: null },
+                  { key: 'Reito_ID', name: 'Reito', link: value => `https://reitoweb.com/b_moba/doc/news.php?h=${value}` },
+                  { key: 'PrimeAI_ID', name: 'PrimeAI', link: value => `https://ukyaku.primeai.net/dedamajyoho-P-townDMMpachi/?hcode=${value}` },
+                  { key: 'P-ASSiST_URL', name: 'P-ASSiST', link: value => value },
+                  { key: 'LINE_ID', name: 'LINE', link: null }
+                ];
+                
+                customColumns.forEach(col => {
+                  if (!row.hasOwnProperty(col.key) || !row[col.key]) {
+                    console.warn(`Missing or empty key ${col.key} in row ${index}`);
+                    bodyRows += `<td>×</td>`;
+                  } else {
+                    const value = row[col.key];
+                    const parts = value.split('|').filter(p => p.trim());
+                    let display = parts.map(p => {
+                      let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
+                      return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
+                    }).join(' ');
+                    bodyRows += `<td>${display}</td>`;
+                  }
+                });
+                
+                bodyRows += '</tr>';
+              });
+              document.getElementById('table-body').innerHTML = bodyRows;
+            } catch (bodyError) {
+              console.error('Body creation error:', bodyError.message);
+              document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データの取得に失敗しました。 (ボディ生成エラー: ' + bodyError.message + ')</td></tr>';
+            }
+          }
+          
+          // ローディング非表示
+          document.getElementById('loading').style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Fetch error:', error.message);
+          document.getElementById('table-body').innerHTML = '<tr><td colspan="25">データの取得に失敗しました。 (fetchエラー: ' + error.message + ')</td></tr>';
+          document.getElementById('loading').style.display = 'none';
+        });
     }
   </script>
 </body>
