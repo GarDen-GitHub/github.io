@@ -10,7 +10,7 @@
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
     table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; } /* デフォルトの中央寄せ */
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; } /* デフォルトの中央寄せ + 折り返し */
     th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
     th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
@@ -21,13 +21,13 @@
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
     #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
     
-    /* 列幅調整 (固定) */
-    th:nth-child(1), td:nth-child(1) { width: 5%; } /* コピー列 */
-    th:nth-child(2), td:nth-child(2) { width: 20%; } /* 店舗名 */
-    th:nth-child(3), td:nth-child(3) { width: 30%; } /* 住所 */
-    th:nth-child(4), td:nth-child(4) { width: 5%; } /* P台数 */
-    th:nth-child(5), td:nth-child(5) { width: 5%; } /* S台数 */
-    th:nth-child(n+6), td:nth-child(n+6) { width: 2%; } /* 残り列の均等幅 */
+    /* 列幅調整 (px単位で固定) */
+    th:nth-child(1), td:nth-child(1) { width: 50px; } /* コピー列 */
+    th:nth-child(2), td:nth-child(2) { width: 200px; } /* 店舗名 */
+    th:nth-child(3), td:nth-child(3) { width: 300px; } /* 住所 */
+    th:nth-child(4), td:nth-child(4) { width: 50px; } /* P台数 */
+    th:nth-child(5), td:nth-child(5) { width: 50px; } /* S台数 */
+    th:nth-child(n+6), td:nth-child(n+6) { width: 40px; } /* 残り列 (均等固定) */
 
     /* 検索機能のスタイル */
     #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
@@ -217,6 +217,7 @@
         const customColumns = [
           { key: 'P-WORLD_ID', name: 'P-WORLD', link: value => `https://www.p-world.co.jp/sp/hall.cgi?i=${value}` },
           { key: 'DMM_ID', name: 'DMM', link: (value, address) => {
+            value = String(value); // 数値を文字列に変換
             const prefName = (address || '').match(/^([^\d]+?[都道府県府])/)?.[1] || '';
             const prefRoman = prefMap[prefName] || '';
             return prefRoman ? `https://p-town.dmm.com/shops/${prefRoman}/${value}` : '';
@@ -228,9 +229,9 @@
           { key: 'Site777_ID', name: 'Site777', link: value => `https://m.site777.jp/f/D0100.do?pmc=${value}` },
           { key: 'PachiPICKS_ID', name: 'PachiPICKS', link: null },
           { key: 'JugglerOnline_ID', name: 'JugglerOnline', link: null },
-          { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => value.includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
+          { key: 'DAIDATA_Online_ID', name: 'DAIDATA', link: value => String(value).includes('@LINE') ? null : `https://daidata.goraggio.com/${value}/` },
           { key: 'TERASmobile2_URL', name: 'TERASmobile2', link: value => value },
-          { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => value.length === 8 ? `https://papimo.jp/h/${value}/` : null },
+          { key: 'PAPIMO_ID', name: 'PAPIMO', link: value => String(value).length === 8 ? `https://papimo.jp/h/${value}/` : null },
           { key: 'P-moba_URL', name: 'P-moba', link: value => value },
           { key: 'P-do_ID', name: 'P-do', link: value => `https://www.p-do.ne.jp/k_mch.cgi?ln=${value}` },
           { key: 'P-ken_ID', name: 'P-ken', link: null },
@@ -243,20 +244,23 @@
         ];
         
         customColumns.forEach(col => {
-          const value = row[col.key];
+          let value = row[col.key];
           if (value === undefined || value === null || value === '') {
             console.warn(`Missing or empty key ${col.key} in row ${index}`);
             bodyRows += `<td>×</td>`;
-          } else if (typeof value !== 'string') {
-            console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
-            bodyRows += `<td>×</td>`;
           } else {
-            const parts = value.split('|').filter(p => p.trim());
-            let display = parts.map(p => {
-              let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
-              return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
-            }).join(' ');
-            bodyRows += `<td>${display}</td>`;
+            value = String(value); // 非文字列を変換
+            if (typeof value !== 'string') {
+              console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
+              bodyRows += `<td>×</td>`;
+            } else {
+              const parts = value.split('|').filter(p => p.trim());
+              let display = parts.map(p => {
+                let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
+                return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
+              }).join(' ');
+              bodyRows += `<td>${display}</td>`;
+            }
           }
         });
         
