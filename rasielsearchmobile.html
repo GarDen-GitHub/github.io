@@ -9,15 +9,20 @@
     #data-container { display: none; }
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
-    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
+    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; scroll-behavior: smooth; } /* 列幅固定 + スムーズスクロール */
     th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* デフォルトの中央寄せ + 折り返しなし + 1行表示 */
-    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; white-space: pre-line; will-change: transform; } /* ヘッダー固定 + 改行許可 + ラグ対策 */
+    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; white-space: pre-line; } /* ヘッダー固定 + 改行許可 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
     th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
     .gray-row td { color: gray; } /* グレー行のスタイル */
     button.copy-btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button.copy-btn:hover { background-color: #0056b3; }
-    @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } #table-container { max-height: 70vh; } #update-time { top: 80px; } }
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      table { font-size: 12px; }
+      #table-container { max-height: 70vh; }
+      #update-time { top: 80px; }
+    }
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
     #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
     
@@ -197,7 +202,7 @@
         if (hasDataSite) {
           bodyRows += `<td><button class="copy-btn" onclick="copyRowData(${allData.indexOf(row)})">📋</button></td>`;
         } else {
-          bodyRows += '<td></td>';
+          bodyRows += '<td></td'.length;
         }
         
         // 基本列
@@ -217,7 +222,7 @@
           '富山県': 'toyama', '石川県': 'ishikawa', '福井県': 'fukui', '山梨県': 'yamanashi', '長野県': 'nagano',
           '岐阜県': 'gifu', '静岡県': 'shizuoka', '愛知県': 'aichi', '三重県': 'mie', '滋賀県': 'shiga',
           '京都府': 'kyoto', '大阪府': 'osaka', '兵庫県': 'hyogo', '奈良県': 'nara', '和歌山県': 'wakayama',
-          '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayama', '広島県': 'hiroshima', '山口県': 'yamaguchi',
+          '鳥取県': 'tottori', '島根県': 'shimane', '岡山県': 'okayma', '広島県': 'hiroshima', '山口県': 'yamaguchi',
           '徳島県': 'tokushima', '香川県': 'kagawa', '愛媛県': 'ehime', '高知県': 'kochi', '福岡県': 'fukuoka',
           '佐賀県': 'saga', '長崎県': 'nagasaki', '熊本県': 'kumamoto', '大分県': 'oita', '宮崎県': 'miyazaki',
           '鹿児島県': 'kagoshima', '沖縄県': 'okinawa'
