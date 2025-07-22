@@ -5,22 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <!-- ズーム防止 -->
   <title>Rasiel Search Mobile - Data</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; }
-    #data-container { display: none; }
-    #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
-    #table-container { max-height: 80vh; overflow-y: auto; min-width: 2770px;} /* テーブルスクロールを高く調整 */
-    table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; box-sizing: border-box;} /* デフォルトの中央寄せ + 折り返し */
-    th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
-    td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
-    th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
-    .gray-row td { color: gray; } /* グレー行のスタイル */
-    button.copy-btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-    button.copy-btn:hover { background-color: #0056b3; }
-    @media (max-width: 600px) { body { padding: 10px; } table { font-size: 12px; } #table-container { max-height: 70vh; } #update-time { top: 80px; } }
-    #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
-    #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
-    
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #data-container {
+      display: none;
+    }
+    #update-time {
+      text-align: center;
+      font-size: 14px;
+      color: gray;
+      margin-bottom: 10px;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      background: white;
+      z-index: 15;
+      padding: 10px 0;
+    }
+    #table-container {
+      max-height: 80vh;
+      overflow-y: auto;
+      overflow-x: auto;
+      min-width: 2770px;
+      margin-top: 100px; /* ヘッダーと更新日時の高さ分 */
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      display: block;
+      table-layout: fixed;
+      min-width: 2770px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      word-wrap: break-word;
+      box-sizing: border-box;
+    }
+    th {
+      background-color: #f2f2f2;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    td.left-align {
+      text-align: left;
+    }
+    th:nth-child(2), th:nth-child(3) {
+      text-align: center;
+    }
+    .gray-row td {
+      color: gray;
+    }
+    button.copy-btn {
+      padding: 5px 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button.copy-btn:hover {
+      background-color: #0056b3;
+    }
+    #loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      text-align: center;
+      padding-top: 200px;
+      font-size: 18px;
+      z-index: 1000;
+    }
+    #search-loading {
+      display: none;
+      text-align: center;
+      font-size: 14px;
+      color: gray;
+      margin-top: 10px;
+      position: fixed;
+      top: 90px;
+      left: 0;
+      width: 100%;
+      z-index: 15;
+    }
     /* 列幅調整 (px単位で固定) */
     th:nth-child(1), td:nth-child(1) { width: 30px !important; } /* コピー列 */
     th:nth-child(2), td:nth-child(2) { width: 200px !important; } /* 店舗名 */
@@ -28,19 +106,88 @@
     th:nth-child(4), td:nth-child(4) { width: 70px !important; } /* P台数 */
     th:nth-child(5), td:nth-child(5) { width: 70px !important; } /* S台数 */
     th:nth-child(n+6), td:nth-child(n+6) { width: 100px !important; } /* 残り列 (均等固定) */
-
     /* 検索機能のスタイル */
-    #header-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; position: sticky; top: 0; background: white; z-index: 20; }
-    #search-container { display: flex; align-items: center; }
-    #search-input { padding: 8px; margin-right: 5px; width: 200px; font-size: 16px; } /* ズーム防止 */
-    #search-button { padding: 8px 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    #search-button:hover { background-color: #218838; }
-
+    #header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: white;
+      z-index: 20;
+      padding: 10px 20px;
+      box-sizing: border-box;
+    }
+    #search-container {
+      display: flex;
+      align-items: center;
+    }
+    #search-input {
+      padding: 8px;
+      margin-right: 5px;
+      width: 200px;
+      font-size: 16px;
+    }
+    #search-button {
+      padding: 8px 12px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #search-button:hover {
+      background-color: #218838;
+    }
     /* モバイル対応 */
     @media (max-width: 600px) {
-      #header-container { flex-direction: column; align-items: center; }
-      #search-container { margin-top: 10px; justify-content: center; width: 100%; }
-      #search-input { width: 70%; font-size: 16px; }
+      body {
+        padding: 10px;
+      }
+      table {
+        font-size: 12px;
+        table-layout: fixed;
+        min-width: 2770px;
+      }
+      #table-container {
+        max-height: 70vh;
+        overflow-x: auto;
+        min-width: 2770px;
+        margin-top: 120px;
+      }
+      #header-container {
+        flex-direction: column;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+      }
+      #search-container {
+        margin-top: 10px;
+        justify-content: center;
+        width: 100%;
+      }
+      #search-input {
+        width: 70%;
+        font-size: 16px;
+      }
+      #update-time {
+        position: fixed;
+        top: 80px;
+        left: 0;
+        width: 100%;
+      }
+      #search-loading {
+        position: fixed;
+        top: 110px;
+        left: 0;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -70,6 +217,7 @@
     let currentData = []; // 検索結果用のデータ
 
     // ログイン状態チェック（未ログインならindex.htmlに戻す）
+ seleccionar
     if (localStorage.getItem('loggedIn') !== 'true') {
       window.location.href = 'index.html';
     } else {
