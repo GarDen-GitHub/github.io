@@ -10,7 +10,7 @@
     #update-time { text-align: center; font-size: 14px; color: gray; margin-bottom: 10px; position: sticky; top: 50px; background: white; z-index: 15; } /* 更新日時固定 */
     #table-container { max-height: 80vh; overflow-y: auto; } /* テーブルスクロールを高く調整 */
     table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; table-layout: fixed; } /* 列幅固定 */
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; } /* デフォルトの中央寄せ + 折り返し */
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; } /* デフォルトの中央寄せ + 折り返し + 固定 */
     th { background-color: #f2f2f2; position: sticky; top: 0; z-index: 10; } /* ヘッダー固定 */
     td.left-align { text-align: left; } /* 店舗名と住所の左寄せ (tdのみ) */
     th:nth-child(2), th:nth-child(3) { text-align: center; } /* ヘッダー (th) の店舗名・住所を中央寄せ */
@@ -21,10 +21,10 @@
     #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); text-align: center; padding-top: 200px; font-size: 18px; z-index: 1000; }
     #search-loading { display: none; text-align: center; font-size: 14px; color: gray; margin-top: 10px; }
     
-    /* 列幅調整 (px単位で固定) */
+    /* 列幅調整 (px単位で固定, 合計を考慮) */
     th:nth-child(1), td:nth-child(1) { width: 50px; } /* コピー列 */
-    th:nth-child(2), td:nth-child(2) { width: 200px; } /* 店舗名 */
-    th:nth-child(3), td:nth-child(3) { width: 300px; } /* 住所 */
+    th:nth-child(2), td:nth-child(2) { width: 150px; } /* 店舗名 (調整) */
+    th:nth-child(3), td:nth-child(3) { width: 250px; } /* 住所 (調整) */
     th:nth-child(4), td:nth-child(4) { width: 50px; } /* P台数 */
     th:nth-child(5), td:nth-child(5) { width: 50px; } /* S台数 */
     th:nth-child(n+6), td:nth-child(n+6) { width: 40px; } /* 残り列 (均等固定) */
@@ -41,6 +41,8 @@
       #header-container { flex-direction: column; align-items: center; }
       #search-container { margin-top: 10px; justify-content: center; width: 100%; }
       #search-input { width: 70%; font-size: 16px; }
+      th:nth-child(2), td:nth-child(2) { width: 120px; } /* モバイル調整 */
+      th:nth-child(3), td:nth-child(3) { width: 200px; } /* モバイル調整 */
     }
   </style>
 </head>
@@ -54,8 +56,8 @@
       </div>
     </div>
     <p id="update-time"></p> <!-- 更新日時表示 -->
-    <div id="search-loading">検索中...</div> <!-- 検索中表示 -->
-    <div id="table-container">
+    <div id="search-loading">検索中...</div> <!-- 検索中表示 */
+  <div id="table-container">
       <table id="data-table">
         <thead id="table-head"></thead>
         <tbody id="table-body"></tbody>
@@ -250,17 +252,12 @@
             bodyRows += `<td>×</td>`;
           } else {
             value = String(value); // 非文字列を変換
-            if (typeof value !== 'string') {
-              console.warn(`Non-string value for key ${col.key} in row ${index}:`, value);
-              bodyRows += `<td>×</td>`;
-            } else {
-              const parts = value.split('|').filter(p => p.trim());
-              let display = parts.map(p => {
-                let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
-                return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
-              }).join(' ');
-              bodyRows += `<td>${display}</td>`;
-            }
+            const parts = value.split('|').filter(p => p.trim());
+            let display = parts.map(p => {
+              let link = col.link ? col.link(p, row['Hall_Address'] || '') : null;
+              return link ? `<a href="${link}" target="_blank">⚪︎</a>` : '⚪︎';
+            }).join(' ');
+            bodyRows += `<td>${display}</td>`;
           }
         });
         
