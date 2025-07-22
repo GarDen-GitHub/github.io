@@ -17,36 +17,49 @@ function loginUser() {
 function fetchData() {
   const apiUrl = 'https://script.google.com/macros/s/AKfycbxfln5-1zm2IheYiwPDPZBDrFEq4pq6wjCdUI4Hi7lCUWD7ZF-ggFtj6dqqfNBYgQ-uQg/exec';  // Apps ScriptのURLを置き換え
   
+  // ローディング表示
+  document.getElementById('loading').style.display = 'block';
+  
   fetch(apiUrl)
     .then(response => response.json())
-    .then(data => {
+    .then(responseData => {
+      const data = responseData.data;
+      const updateTime = responseData.updateTime;
+      
+      // 更新日時表示
+      document.getElementById('update-time').innerHTML = `更新日時: ${updateTime}`;
+      
       if (data.length === 0) {
         document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データがありません。</td></tr>';
-        return;
+      } else {
+        // ヘッダー作成
+        const headers = Object.keys(data[0]);
+        let headerRow = '<tr>';
+        headers.forEach(header => {
+          headerRow += `<th>${header}</th>`;
+        });
+        headerRow += '</tr>';
+        document.getElementById('table-head').innerHTML = headerRow;
+        
+        // ボディ作成
+        let bodyRows = '';
+        data.forEach(row => {
+          bodyRows += '<tr>';
+          headers.forEach(header => {
+            bodyRows += `<td>${row[header] || ''}</td>`;
+          });
+          bodyRows += '</tr>';
+        });
+        document.getElementById('table-body').innerHTML = bodyRows;
       }
       
-      // ヘッダー作成（最初のオブジェクトのキーから）
-      const headers = Object.keys(data[0]);
-      let headerRow = '<tr>';
-      headers.forEach(header => {
-        headerRow += `<th>${header}</th>`;
-      });
-      headerRow += '</tr>';
-      document.getElementById('table-head').innerHTML = headerRow;
-      
-      // ボディ作成
-      let bodyRows = '';
-      data.forEach(row => {
-        bodyRows += '<tr>';
-        headers.forEach(header => {
-          bodyRows += `<td>${row[header] || ''}</td>`;
-        });
-        bodyRows += '</tr>';
-      });
-      document.getElementById('table-body').innerHTML = bodyRows;
+      // ローディング非表示
+      document.getElementById('loading').style.display = 'none';
     })
     .catch(error => {
       console.error('Error:', error);
       document.getElementById('table-body').innerHTML = '<tr><td colspan="100%">データの取得に失敗しました。</td></tr>';
+      // ローディング非表示
+      document.getElementById('loading').style.display = 'none';
     });
 }
