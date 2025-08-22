@@ -266,7 +266,7 @@
           
           const displayHeaders = [
             '', '店舗名', '住所', 'P台数', 'S台数',
-            'P-WORLD', 'DMM', 'みんパチ', 'Maruhan', 'PIA', 'PsCUBE',
+            'P-WORLD', 'DMM', 'みんパチ', 'ホールナビ', 'X(Twitter)', 'Maruhan', 'PIA', 'PsCUBE',
             'Site777', 'Pachi\nPICKS', 'Juggler\nOnline', 'DAIDATA\nOnline', 'TERAS\nmobile2',
             'PAPIMO', 'P-moba', 'P-do', 'P-ken', 'P-tora', 'Star', 'Reito',
             'PrimeAI', 'P-ASSiST', 'LINE'
@@ -352,6 +352,8 @@
             return prefRoman ? `https://p-town.dmm.com/shops/${prefRoman}/${value}` : '';
           } },
           { key: 'MinPachi_ID', name: 'みんパチ', link: value => `https://minpachi.com/${value}/` },
+          { key: 'Hall_Navi_ID', name: 'ホールナビ', link: value => `https://hall-navi.com/hole_view?hid=${value}` },
+          { key: 'X_ID', name: 'X(Twitter)', link: value => `https://x.com/${value}` },
           { key: 'Maruhan_ID', name: 'Maruhan', link: null },
           { key: 'PIA_ID', name: 'PIA', link: null },
           { key: 'PsCUBE_URL', name: 'PsCUBE', link: value => value },
